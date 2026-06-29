@@ -1,0 +1,13 @@
+{
+  "name": "control-ingreso",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backend": "cd backend && uvicorn main:app --reload --port 8000",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -n BE,FE -c cyan,green \"npm run backend\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

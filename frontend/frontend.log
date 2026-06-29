@@ -1,0 +1,56 @@
+
+> control-ingreso-frontend@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.7s
+ ○ Compiling / ...
+ ✓ Compiled / in 4.9s (447 modules)
+ GET / 200 in 5355ms
+ ○ Compiling /configuracion ...
+ ✓ Compiled /configuracion in 2.1s (678 modules)
+ GET /configuracion 200 in 2264ms
+ ✓ Compiled /ingreso in 328ms (697 modules)
+ GET /ingreso 200 in 386ms
+ ✓ Compiled /residentes in 212ms (703 modules)
+ GET /residentes 200 in 252ms
+ GET / 200 in 22ms
+ GET /configuracion 200 in 39ms
+ GET /configuracion 200 in 43ms
+ ✓ Compiled in 638ms (674 modules)
+ ✓ Compiled in 551ms (674 modules)
+ ✓ Compiled in 453ms (674 modules)
+ GET /configuracion 200 in 138ms
+ ✓ Compiled /ingreso in 226ms (693 modules)
+ ✓ Compiled /_error in 490ms (695 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 602ms
+ ✓ Compiled in 911ms (693 modules)
+ ○ Compiling /residentes ...
+ ✓ Compiled /residentes in 618ms (699 modules)
+ ✓ Compiled in 5.2s (696 modules)
+ ✓ Compiled in 613ms (696 modules)
+ ✓ Compiled in 554ms (696 modules)
+ ✓ Compiled in 898ms (696 modules)
+ ✓ Compiled in 2.6s (525 modules)
+ ✓ Compiled in 1180ms (525 modules)
+ ✓ Compiled in 385ms (525 modules)
+ ✓ Compiled in 412ms (525 modules)
+ ✓ Compiled in 805ms (525 modules)
+ ✓ Compiled in 554ms (525 modules)
+ ✓ Compiled in 1766ms (696 modules)
+ ✓ Compiled in 1175ms (696 modules)
+ ✓ Compiled in 681ms (696 modules)
+ ✓ Compiled in 544ms (696 modules)
+ ✓ Compiled in 573ms (696 modules)
+ ✓ Compiled in 500ms (696 modules)
+ ✓ Compiled in 559ms (696 modules)
+ ✓ Compiled in 5.1s (696 modules)
+ ✓ Compiled in 593ms (696 modules)
+ ✓ Compiled in 507ms (696 modules)
+ ✓ Compiled in 600ms (696 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\Proyecto_ingreso\frontend\.next\cache\webpack\server-development\5.pack.gz_' -> 'D:\Proyecto_ingreso\frontend\.next\cache\webpack\server-development\5.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\Proyecto_ingreso\frontend\.next\cache\webpack\client-development\4.pack.gz_' -> 'D:\Proyecto_ingreso\frontend\.next\cache\webpack\client-development\4.pack.gz'

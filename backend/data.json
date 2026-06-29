@@ -1,0 +1,56 @@
+{
+  "entries": [],
+  "config": [
+    {
+      "key": "categorias",
+      "value": [
+        "Empleado",
+        "Visitante",
+        "Residente"
+      ],
+      "_id": "6a34927dcc44109e7f7e51cf"
+    },
+    {
+      "key": "destinos",
+      "value": [
+        "Casa 1",
+        "Casa 2",
+        "Casa 3",
+        "Casa 4"
+      ],
+      "_id": "6a34927dcc44109e7f7e51d0"
+    }
+  ],
+  "personas": [
+    {
+      "placa": "EMP-001",
+      "nombre": "Carlos L\u00f3pez",
+      "categoria": "Empleado",
+      "_id": "3323e373-80f1-44e7-b542-21510e963af6"
+    },
+    {
+      "placa": "EMP-002",
+      "nombre": "Mar\u00eda Garc\u00eda",
+      "categoria": "Empleado",
+      "_id": "b3e15c96-2623-443b-a75c-44d87c3f846a"
+    },
+    {
+      "placa": "VIS-001",
+      "nombre": "Pedro S\u00e1nchez",
+      "categoria": "Visitante",
+      "_id": "d2625e6b-8652-4fdc-8388-13220175217e"
+    },
+    {
+      "placa": "RES-001",
+      "nombre": "Ana Mart\u00ednez",
+      "categoria": "Residente",
+      "_id": "bc3f6447-a667-4e9b-8c8f-9ad5658cc9e5"
+    },
+    {
+      "placa": "RES-002",
+      "nombre": "Luis Rodr\u00edguez",
+      "categoria": "Residente",
+      "_id": "e6f1fc3b-ffbc-4b04-8424-336e72366232"
+    }
+  ]
+}
