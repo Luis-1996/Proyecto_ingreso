@@ -30,6 +30,10 @@
         "from": "backend",
         "to": "backend",
         "filter": ["**/*", "!__pycache__", "!data/**"]
+      },
+      {
+        "from": "database",
+        "to": "database"
       }
     ],
     "win": {
