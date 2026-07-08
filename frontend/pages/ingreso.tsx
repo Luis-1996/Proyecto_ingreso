@@ -49,7 +49,6 @@ export default function IngresoPage() {
   const [editNombre, setEditNombre] = useState('')
   const [editCat, setEditCat] = useState('')
   const [editDestino, setEditDestino] = useState('')
-  const [editResponsable, setEditResponsable] = useState('')
 
   const inputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
@@ -123,7 +122,6 @@ export default function IngresoPage() {
       nombre: editNombre,
       categoria: editCat,
       destino: editDestino,
-      responsable: editResponsable,
     })
   }
 
@@ -381,15 +379,6 @@ export default function IngresoPage() {
                 value={editDestino}
                 onChange={(e) => setEditDestino(e.target.value)}
                 disabled={editCat === 'Residente'}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-responsable">Registrado por</Label>
-              <Input
-                id="edit-responsable"
-                value={editResponsable}
-                onChange={(e) => setEditResponsable(e.target.value)}
-                placeholder="Nombre de quien registra"
               />
             </div>
           </div>

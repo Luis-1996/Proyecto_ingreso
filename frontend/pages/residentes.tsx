@@ -86,7 +86,7 @@ export default function ResidentesPage() {
                     return (
                       <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 font-mono text-sm">{p.placa}</td>
-                        <td className="px-4 py-3 text-sm">{p.nombre}</td>
+                        <td className="px-4 py-3 text-sm">{entryMap[p.placa]?.nombre || p.nombre}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{p.destino}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.salida ? new Date(entryMap[p.placa].salida!).toLocaleString('es-ES') : '—'}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.responsable || '—'}</td>
