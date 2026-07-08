@@ -14,7 +14,7 @@ import { ArrowLeftToLine, Loader2, UserCheck } from 'lucide-react'
 
 export default function ResidentesPage() {
   const [personas, setPersonas] = useState<Persona[]>([])
-  const [salidaMap, setSalidaMap] = useState<Record<string, string>>({})
+  const [entryMap, setEntryMap] = useState<Record<string, Entry>>({})
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
   const [modalPersona, setModalPersona] = useState<Persona | null>(null)
@@ -28,12 +28,12 @@ export default function ResidentesPage() {
       ])
       const residentes = allPersonas.filter((p) => p.categoria === 'Residente')
       const fuera = new Set<string>()
-      const sm: Record<string, string> = {}
+      const em: Record<string, Entry> = {}
       for (const e of sinIngreso) {
         fuera.add(e.placa)
-        if (e.salida) sm[e.placa] = e.salida
+        em[e.placa] = e
       }
-      setSalidaMap(sm)
+      setEntryMap(em)
       setPersonas(residentes.filter((p) => fuera.has(p.placa)))
     } catch {}
     setLoading(false)
@@ -76,6 +76,7 @@ export default function ResidentesPage() {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nombre</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destino</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Salida</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Registró</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acción</th>
                   </tr>
                 </thead>
@@ -87,7 +88,8 @@ export default function ResidentesPage() {
                         <td className="px-4 py-3 font-mono text-sm">{p.placa}</td>
                         <td className="px-4 py-3 text-sm">{p.nombre}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{p.destino}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{salidaMap[p.placa] ? new Date(salidaMap[p.placa]).toLocaleString('es-ES') : '—'}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.salida ? new Date(entryMap[p.placa].salida!).toLocaleString('es-ES') : '—'}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.responsable || '—'}</td>
                         <td className="px-4 py-3">
                           <Button onClick={() => setModalPersona(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                             {busy ? (
@@ -135,7 +137,11 @@ export default function ResidentesPage() {
               )}
               <div className="text-sm">
                 <span className="text-muted-foreground">Salida: </span>
-                <span className="font-medium">{salidaMap[modalPersona.placa] ? new Date(salidaMap[modalPersona.placa]).toLocaleString('es-ES') : '—'}</span>
+                <span className="font-medium">{entryMap[modalPersona.placa]?.salida ? new Date(entryMap[modalPersona.placa].salida!).toLocaleString('es-ES') : '—'}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Registró: </span>
+                <span className="font-medium">{entryMap[modalPersona.placa]?.responsable || '—'}</span>
               </div>
             </div>
           )}

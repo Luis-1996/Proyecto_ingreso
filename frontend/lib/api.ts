@@ -8,6 +8,7 @@ export interface Entry {
   destino: string
   ingreso: string | null
   salida: string | null
+  responsable: string
   activo: boolean
 }
 
@@ -66,7 +67,7 @@ export const api = {
   listPersonas: () => request<Persona[]>('/api/personas'),
 
   // Ingreso automático
-  ingresoAutomatico: (placa: string, overrides?: { nombre?: string; categoria?: string; destino?: string }) =>
+  ingresoAutomatico: (placa: string, overrides?: { nombre?: string; categoria?: string; destino?: string; responsable?: string }) =>
     request<IngresoResultado>('/api/ingreso-automatico', {
       method: 'POST',
       body: JSON.stringify({ placa, ...overrides }),

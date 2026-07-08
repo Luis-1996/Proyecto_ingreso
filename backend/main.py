@@ -132,6 +132,7 @@ async def startup():
             destino TEXT DEFAULT '',
             ingreso TEXT,
             salida TEXT,
+            responsable TEXT DEFAULT '',
             activo INTEGER DEFAULT 1
         );
         CREATE TABLE IF NOT EXISTS config (
@@ -146,6 +147,10 @@ async def startup():
         CREATE INDEX IF NOT EXISTS idx_entries_categoria ON entries(categoria);
         CREATE INDEX IF NOT EXISTS idx_entries_ingreso ON entries(ingreso);
     """)
+    try:
+        await db.execute("ALTER TABLE entries ADD COLUMN responsable TEXT DEFAULT ''")
+    except Exception:
+        pass
     if not await cargar_schema(db):
         cursor = await db.execute("SELECT id FROM config WHERE key = ?", ("categorias",))
         if not await cursor.fetchone():
@@ -251,10 +256,11 @@ async def ingreso_automatico(data: dict):
     nombre = data.get("nombre", persona["nombre"])
     categoria = data.get("categoria", persona["categoria"])
     destino = data.get("destino", persona["destino"] if persona["destino"] else categoria)
+    responsable = data.get("responsable", "")
     now = datetime.now().isoformat()
 
     cursor = await db.execute(
-        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, activo FROM entries WHERE placa = ? AND activo = 1 ORDER BY ingreso DESC LIMIT 1",
+        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, responsable, activo FROM entries WHERE placa = ? AND activo = 1 ORDER BY ingreso DESC LIMIT 1",
         (placa,),
     )
     activo = await cursor.fetchone()
@@ -268,8 +274,8 @@ async def ingreso_automatico(data: dict):
             raise HTTPException(status_code=400, detail="El residente ya tiene una salida pendiente")
 
         cursor = await db.execute(
-            "INSERT INTO entries (placa, nombre, categoria, destino, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-            (placa, nombre, categoria, destino, None, now, 0),
+            "INSERT INTO entries (placa, nombre, categoria, destino, responsable, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+            (placa, nombre, categoria, destino, responsable, None, now, 0),
         )
         row = await cursor.fetchone()
         await db.commit()
@@ -281,6 +287,7 @@ async def ingreso_automatico(data: dict):
                 "nombre": nombre,
                 "categoria": categoria,
                 "destino": destino,
+                "responsable": row["responsable"] or "",
                 "ingreso": None,
                 "salida": now,
                 "activo": False,
@@ -291,8 +298,8 @@ async def ingreso_automatico(data: dict):
         raise HTTPException(status_code=400, detail=f"El {categoria} ya tiene un ingreso activo")
 
     cursor = await db.execute(
-        "INSERT INTO entries (placa, nombre, categoria, destino, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-        (placa, nombre, categoria, destino, now, None, 1),
+        "INSERT INTO entries (placa, nombre, categoria, destino, responsable, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        (placa, nombre, categoria, destino, responsable, now, None, 1),
     )
     row = await cursor.fetchone()
     await db.commit()
@@ -304,6 +311,7 @@ async def ingreso_automatico(data: dict):
             "nombre": nombre,
             "categoria": categoria,
             "destino": destino,
+            "responsable": row["responsable"] or "",
             "ingreso": now,
             "salida": None,
             "activo": True,
@@ -318,8 +326,8 @@ async def create_entry(entry: EntryCreate):
     db = get_db()
     now = datetime.now().isoformat()
     cursor = await db.execute(
-        "INSERT INTO entries (placa, nombre, categoria, destino, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-        (entry.placa, entry.nombre, entry.categoria, entry.destino, now, None, 1),
+        "INSERT INTO entries (placa, nombre, categoria, destino, responsable, ingreso, salida, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+        (entry.placa, entry.nombre, entry.categoria, entry.destino, "", now, None, 1),
     )
     row = await cursor.fetchone()
     await db.commit()
@@ -329,6 +337,7 @@ async def create_entry(entry: EntryCreate):
         "nombre": entry.nombre,
         "categoria": entry.categoria,
         "destino": entry.destino,
+        "responsable": "",
         "ingreso": now,
         "salida": None,
         "activo": True,
@@ -372,7 +381,7 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
         sql_order = " ORDER BY ingreso DESC"
 
     where = " WHERE " + " AND ".join(conditions) if conditions else ""
-    sql = f"SELECT id, placa, nombre, categoria, destino, ingreso, salida, activo FROM entries{where}{sql_order}"
+    sql = f"SELECT id, placa, nombre, categoria, destino, ingreso, salida, responsable, activo FROM entries{where}{sql_order}"
 
     cursor = await db.execute(sql, params)
     rows = await cursor.fetchall()
@@ -385,6 +394,7 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
             "destino": r["destino"],
             "ingreso": r["ingreso"] if r["ingreso"] else None,
             "salida": r["salida"] if r["salida"] else None,
+            "responsable": r["responsable"] or "",
             "activo": bool(r["activo"]),
         }
         for r in rows
@@ -395,7 +405,7 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
 async def get_entry(entry_id: int):
     db = get_db()
     cursor = await db.execute(
-        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, activo FROM entries WHERE id = ?",
+        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, responsable, activo FROM entries WHERE id = ?",
         (entry_id,),
     )
     row = await cursor.fetchone()
@@ -409,6 +419,7 @@ async def get_entry(entry_id: int):
         "destino": row["destino"],
         "ingreso": row["ingreso"] if row["ingreso"] else None,
         "salida": row["salida"] if row["salida"] else None,
+        "responsable": row["responsable"] or "",
         "activo": bool(row["activo"]),
     }
 
@@ -424,7 +435,7 @@ async def registrar_salida(entry_id: int):
     if cursor.rowcount == 0:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     cursor = await db.execute(
-        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, activo FROM entries WHERE id = ?",
+        "SELECT id, placa, nombre, categoria, destino, ingreso, salida, responsable, activo FROM entries WHERE id = ?",
         (entry_id,),
     )
     row = await cursor.fetchone()
@@ -437,6 +448,7 @@ async def registrar_salida(entry_id: int):
         "destino": row["destino"],
         "ingreso": row["ingreso"] if row["ingreso"] else None,
         "salida": row["salida"] if row["salida"] else None,
+        "responsable": row["responsable"] or "",
         "activo": bool(row["activo"]),
     }
 
@@ -455,7 +467,7 @@ async def registrar_ingreso_residente(placa: str):
         raise HTTPException(status_code=404, detail="No hay registro de salida pendiente")
 
     cursor = await db.execute(
-        "UPDATE entries SET ingreso = ? WHERE id = ? RETURNING id, placa, nombre, categoria, destino, ingreso, salida, activo",
+        "UPDATE entries SET ingreso = ? WHERE id = ? RETURNING id, placa, nombre, categoria, destino, ingreso, salida, responsable, activo",
         (now, row["id"]),
     )
     result = await cursor.fetchall()
@@ -469,6 +481,7 @@ async def registrar_ingreso_residente(placa: str):
         "destino": row["destino"],
         "ingreso": row["ingreso"] if row["ingreso"] else None,
         "salida": row["salida"] if row["salida"] else None,
+        "responsable": row["responsable"] or "",
         "activo": bool(row["activo"]),
     }
 
