@@ -363,7 +363,8 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
         params.append(d)
     if hasta:
         conditions.append("(ingreso <= ? OR salida <= ?)")
-        h = datetime.fromisoformat(hasta + "T23:59:59").isoformat()
+        hs = hasta if "T" in hasta else hasta + "T23:59:59"
+        h = datetime.fromisoformat(hs).isoformat()
         params.append(h)
         params.append(h)
     if salida_desde:
@@ -371,7 +372,8 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
         params.append(datetime.fromisoformat(salida_desde).isoformat())
     if salida_hasta:
         conditions.append("salida < ?")
-        params.append(datetime.fromisoformat(salida_hasta + "T23:59:59").isoformat())
+        hs = salida_hasta if "T" in salida_hasta else salida_hasta + "T23:59:59"
+        params.append(datetime.fromisoformat(hs).isoformat())
     if sin_ingreso:
         conditions.append("ingreso IS NULL")
         sql_order = " ORDER BY salida DESC"
