@@ -18,6 +18,16 @@ import {
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
+const catIcon = (cat: string) => {
+  switch (cat) {
+    case 'Empleado': return <UserCheck className="h-3.5 w-3.5" />
+    case 'Visitante': return <Users className="h-3.5 w-3.5" />
+    case 'Residente': return <Building2 className="h-3.5 w-3.5" />
+    case 'Seguridad': return <Shield className="h-3.5 w-3.5" />
+    default: return null
+  }
+}
+
 type Tab = 'personas' | 'reportes' | 'destinos' | 'categorias' | 'docs'
 
 const tabs: { key: Tab; label: string; icon: typeof Tags }[] = [
@@ -158,16 +168,6 @@ export default function ConfiguracionPage() {
       setEditPersona(null)
     } catch (err: any) {
       setMessage(err.message)
-    }
-  }
-
-  const catIcon = (cat: string) => {
-    switch (cat) {
-      case 'Empleado': return <UserCheck className="h-3.5 w-3.5" />
-      case 'Visitante': return <Users className="h-3.5 w-3.5" />
-      case 'Residente': return <Building2 className="h-3.5 w-3.5" />
-      case 'Seguridad': return <Shield className="h-3.5 w-3.5" />
-      default: return null
     }
   }
 

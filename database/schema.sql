@@ -44,7 +44,7 @@ INSERT OR IGNORE INTO personas (placa, nombre, categoria, destino) VALUES
     ('EHK942', 'ANDRES URIBE', 'Residente', 'Casa 2'),
     ('JIV982', 'ANDRES URIBE', 'Residente', 'Casa 2'),
     ('KUP664', 'CARLA', 'Residente', 'Casa 2'),
-    ('PZX341', 'CARLOS', 'Residente', 'Casa 4')),
+    ('PZX341', 'CARLOS', 'Residente', 'Casa 4'),
     ('KOQ539', 'CARLOS', 'Residente', 'Casa 4'),
     ('FXQ560', 'CATALINA', 'Residente', 'Casa 1'),
     ('KCJ400', 'DANIEL', 'Residente', 'Casa 4'),
