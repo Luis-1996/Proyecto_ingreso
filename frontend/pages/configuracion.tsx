@@ -279,29 +279,45 @@ export default function ConfiguracionPage() {
                 Agregar
               </Button>
             </div>
-            <div className="space-y-2">
-              {filteredPersonas.map((p) => (
-                <div key={p.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <div className="flex items-center gap-3">
-                    {catIcon(p.categoria)}
-                    <span className="font-mono font-medium">{p.placa}</span>
-                    <span className="text-muted-foreground">{p.nombre}</span>
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{p.categoria}</span>
-                    {p.destino && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{p.destino}</span>}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePersona(p.id)}>
-                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive transition-colors" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {filteredPersonas.length === 0 && (
-                <p className="text-sm text-muted-foreground">Sin personas registradas</p>
-              )}
+            <div className="rounded-md border max-h-[400px] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background z-10">
+                  <tr className="bg-muted/50 border-b">
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-5"></th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Placa</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nombre</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Categoría</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Destino</th>
+                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-24">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPersonas.map((p) => (
+                    <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2.5">{catIcon(p.categoria)}</td>
+                      <td className="px-4 py-2.5 font-mono">{p.placa}</td>
+                      <td className="px-4 py-2.5">{p.nombre}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded">{p.categoria}</span>
+                      </td>
+                      <td className="px-4 py-2.5">{p.destino || '—'}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePersona(p.id)}>
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive transition-colors" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredPersonas.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-muted-foreground">Sin personas registradas</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
