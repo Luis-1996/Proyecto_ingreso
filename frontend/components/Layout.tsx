@@ -1,10 +1,10 @@
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { Menu, UserCheck, Users, Building2, Home, Settings, X } from "lucide-react"
+import { Menu, UserCheck, Users, Building2, Home, Settings, X, Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const navItems = [
   { href: "/ingreso", label: "Ingreso", icon: Home },
@@ -17,6 +17,22 @@ const navItems = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark')
+      setDark(true)
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const next = !dark
+    setDark(next)
+    document.documentElement.classList.toggle('dark', next)
+    localStorage.setItem('theme', next ? 'dark' : 'light')
+  }
 
   const nav = (
     <nav className="flex flex-col gap-1">
@@ -46,8 +62,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background flex">
       <aside className="hidden md:flex flex-col w-56 border-r bg-muted/30 fixed inset-y-0 left-0 z-30">
-        <div className="flex items-center gap-3 h-16 px-4 border-b font-semibold">
+        <div className="flex items-center justify-between h-16 px-4 border-b font-semibold">
           <span className="text-xl leading-none" style={{ fontFamily: "'Avenir Next', Avenir, sans-serif", fontWeight: 400 }}>Finca tennis</span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
         </div>
         <div className="flex-1 overflow-y-auto p-3">{nav}</div>
       </aside>
@@ -73,6 +92,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <span className="ml-3 font-semibold">Control de Ingreso</span>
+          <div className="ml-auto">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+              {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
