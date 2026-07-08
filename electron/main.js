@@ -8,7 +8,7 @@ let mainWindow
 let backendProcess
 let frontendServer
 
-const BACKEND_PORT = 8000
+const BACKEND_PORT = parseInt(process.env.BACKEND_PORT || '8002', 10)
 const FRONTEND_PORT = 3000
 const isDev = !app.isPackaged
 
