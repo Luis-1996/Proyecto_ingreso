@@ -3,18 +3,29 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api, type Persona, type Entry } from '@/lib/api'
-import { Plus, Trash2, UserCheck, Users, Building2, Shield, Tags, MapPin, UsersIcon, FileText } from 'lucide-react'
+import { Plus, Trash2, Pencil, UserCheck, Users, Building2, Shield, Tags, MapPin, UsersIcon, FileText, FileSpreadsheet } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
-type Tab = 'personas' | 'reportes' | 'destinos' | 'categorias'
+type Tab = 'personas' | 'reportes' | 'destinos' | 'categorias' | 'docs'
 
 const tabs: { key: Tab; label: string; icon: typeof Tags }[] = [
   { key: 'personas', label: 'Personal', icon: UsersIcon },
   { key: 'reportes', label: 'Reporte', icon: FileText },
   { key: 'destinos', label: 'Destinos', icon: MapPin },
   { key: 'categorias', label: 'Categorías', icon: Tags },
+  { key: 'docs', label: 'Docs', icon: FileSpreadsheet },
 ]
 
 export default function ConfiguracionPage() {
@@ -28,17 +39,27 @@ export default function ConfiguracionPage() {
   const [message, setMessage] = useState('')
 
   const [personas, setPersonas] = useState<Persona[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [newPlaca, setNewPlaca] = useState('')
   const [newNombre, setNewNombre] = useState('')
   const [newCat, setNewCat] = useState('Empleado')
   const [newPersonaDestino, setNewPersonaDestino] = useState('')
+  const [editPersona, setEditPersona] = useState<Persona | null>(null)
+  const [editPlaca, setEditPlaca] = useState('')
+  const [editNombre, setEditNombre] = useState('')
+  const [editCat, setEditCat] = useState('')
+  const [editDestino, setEditDestino] = useState('')
   const categoriaOrder: Record<string, number> = { Residente: 0, Empleado: 1, Visitante: 2 }
   const [personalSubTab, setPersonalSubTab] = useState<'todos' | 'empleados' | 'visitantes' | 'residentes' | 'seguridad'>('todos')
 
   const catFilter = (st: string) => st === 'todos' ? true : st === 'empleados' ? 'empleado' : st === 'residentes' ? 'residente' : st === 'visitantes' ? 'visitante' : 'seguridad'
   const filteredPersonas = personas.filter((p) => {
-    if (personalSubTab === 'todos') return true
-    return p.categoria.toLowerCase() === catFilter(personalSubTab)
+    if (personalSubTab !== 'todos' && p.categoria.toLowerCase() !== catFilter(personalSubTab)) return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      if (!p.placa.toLowerCase().includes(q) && !p.nombre.toLowerCase().includes(q)) return false
+    }
+    return true
   })
 
   useEffect(() => {
@@ -116,6 +137,30 @@ export default function ConfiguracionPage() {
     }
   }
 
+  const openEdit = (p: Persona) => {
+    setEditPersona(p)
+    setEditPlaca(p.placa)
+    setEditNombre(p.nombre)
+    setEditCat(p.categoria)
+    setEditDestino(p.destino || '')
+  }
+
+  const saveEdit = async () => {
+    if (!editPersona || !editPlaca.trim() || !editNombre.trim()) return
+    try {
+      const updated = await api.updatePersona(editPersona.id, {
+        placa: editPlaca,
+        nombre: editNombre,
+        categoria: editCat,
+        destino: editDestino,
+      })
+      setPersonas(personas.map((p) => (p.id === editPersona.id ? updated : p)))
+      setEditPersona(null)
+    } catch (err: any) {
+      setMessage(err.message)
+    }
+  }
+
   const catIcon = (cat: string) => {
     switch (cat) {
       case 'Empleado': return <UserCheck className="h-3.5 w-3.5" />
@@ -164,6 +209,12 @@ export default function ConfiguracionPage() {
             <CardTitle>Personal Registrado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por placa o nombre..."
+              className="max-w-sm"
+            />
             <div className="flex gap-1 p-1 rounded-lg bg-muted w-fit">
               {(['todos', 'empleados', 'visitantes', 'residentes', 'seguridad'] as const).map((st) => {
                 const active = personalSubTab === st
@@ -238,9 +289,14 @@ export default function ConfiguracionPage() {
                     <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{p.categoria}</span>
                     {p.destino && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">{p.destino}</span>}
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePersona(p.id)}>
-                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive transition-colors" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePersona(p.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive transition-colors" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               {filteredPersonas.length === 0 && (
@@ -250,6 +306,56 @@ export default function ConfiguracionPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!editPersona} onOpenChange={(o) => !o && setEditPersona(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar persona</DialogTitle>
+            <DialogDescription>Modifique los datos de la persona.</DialogDescription>
+          </DialogHeader>
+          {editPersona && (
+            <div className="grid grid-cols-2 gap-3 py-2">
+              <div className="space-y-1 col-span-2">
+                <Label>Placa</Label>
+                <Input value={editPlaca} onChange={(e) => setEditPlaca(e.target.value.toUpperCase())} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label>Nombre</Label>
+                <Input value={editNombre} onChange={(e) => setEditNombre(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Categoría</Label>
+                <select
+                  value={editCat}
+                  onChange={(e) => setEditCat(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Destino</Label>
+                <select
+                  value={editDestino}
+                  onChange={(e) => setEditDestino(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Sin destino</option>
+                  {destinos.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPersona(null)}>Cancelar</Button>
+            <Button onClick={saveEdit}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {tab === 'reportes' && (
         <ReportesSection />
@@ -328,22 +434,27 @@ export default function ConfiguracionPage() {
           </CardContent>
         </Card>
       )}
+
+      {tab === 'docs' && (
+        <DocsSection />
+      )}
     </div>
   )
 }
 
 function ReportesSection() {
+  const today = () => new Date().toISOString().slice(0, 10)
   const [entries, setEntries] = useState<Entry[]>([])
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
-  const [desde, setDesde] = useState('')
-  const [hasta, setHasta] = useState('')
+  const [fechaDesde, setFechaDesde] = useState(today)
+  const [fechaHasta, setFechaHasta] = useState(today)
 
   const cargar = async () => {
     try {
       const data = await api.getEntries({
         ...(categoriaFiltro && { categoria: categoriaFiltro }),
-        ...(desde && { desde: desde + 'T00:00:00' }),
-        ...(hasta && { hasta }),
+        desde: fechaDesde + 'T00:00:00',
+        hasta: fechaHasta + 'T23:59:59',
       })
       setEntries(data)
     } catch {
@@ -359,9 +470,11 @@ function ReportesSection() {
     const doc = new jsPDF()
 
     doc.setFontSize(16)
-    doc.text('REPORTE INGRESO DE PERSONAL FINCA TENNIS', 105, 20, { align: 'center' })
+    doc.text('REPORTE DE INGRESOS FINCA TENNIS', 105, 20, { align: 'center' })
+    doc.setFontSize(10)
+    doc.text(`${fechaDesde} — ${fechaHasta}`, 105, 27, { align: 'center' })
     doc.setFontSize(8)
-    let y = 26
+    let y = 33
     doc.setFont('Helvetica', 'bold')
     doc.text('Generado:', 14, y)
     doc.setFont('Helvetica', 'normal')
@@ -372,23 +485,16 @@ function ReportesSection() {
       doc.text('Categoría:', 14, y)
       doc.setFont('Helvetica', 'normal')
       doc.text(categoriaFiltro, 40, y)
-      y += 4.5
-    }
-    if (desde || hasta) {
-      doc.setFont('Helvetica', 'bold')
-      doc.text('Fechas:', 14, y)
-      doc.setFont('Helvetica', 'normal')
-      doc.text(`${desde || '—'} a ${hasta || '—'}`, 40, y)
     }
 
-    const yStart = desde || hasta || categoriaFiltro ? y + 6 : y + 6
+    const yStart = categoriaFiltro ? y + 6 : y + 6
 
     autoTable(doc, {
       startY: yStart,
-      head: [['Nombre', 'Placa', 'Categoría', 'Destino', 'Ingreso', 'Salida']],
+      head: [['Placa', 'Nombre', 'Categoría', 'Destino', 'Ingreso', 'Salida']],
       body: entries.map((e) => [
-        e.nombre,
         e.placa,
+        e.nombre,
         e.categoria,
         e.destino,
         e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '—',
@@ -398,16 +504,34 @@ function ReportesSection() {
       headStyles: { fillColor: [75, 85, 99], halign: 'center' },
     })
 
-    doc.save(`reporte-ingresos-${Date.now()}.pdf`)
+    doc.save(`reporte-${fechaDesde}-${fechaHasta}.pdf`)
   }
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>Reporte Ingreso De Personal Finca Tennis</CardTitle>
+        <CardTitle>Registro de ingresos y salidas</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-3 items-end">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Desde</label>
+            <Input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="h-9 w-44"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Hasta</label>
+            <Input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="h-9 w-44"
+            />
+          </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Categoría</label>
             <select
@@ -421,14 +545,6 @@ function ReportesSection() {
               <option value="Residente">Residentes</option>
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Desde</label>
-            <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="h-9 w-40" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Hasta</label>
-            <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="h-9 w-40" />
-          </div>
           <Button onClick={cargar} size="sm" className="h-9">Buscar</Button>
           <Button onClick={generarPDF} size="sm" variant="outline" className="h-9 ml-auto" disabled={entries.length === 0}>
             <FileText className="h-4 w-4 mr-1.5" />
@@ -436,12 +552,13 @@ function ReportesSection() {
           </Button>
         </div>
 
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border max-h-[400px] overflow-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 bg-background z-10">
               <tr className="bg-muted/50 border-b">
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nombre</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-5"></th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Placa</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nombre</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Categoría</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Destino</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Ingreso</th>
@@ -451,8 +568,9 @@ function ReportesSection() {
             <tbody>
               {entries.map((e) => (
                 <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-2.5">{e.nombre}</td>
+                  <td className="px-4 py-2.5">{catIcon(e.categoria)}</td>
                   <td className="px-4 py-2.5 font-mono">{e.placa}</td>
+                  <td className="px-4 py-2.5">{e.nombre}</td>
                   <td className="px-4 py-2.5">
                     <span className="text-xs bg-muted px-1.5 py-0.5 rounded">{e.categoria}</span>
                   </td>
@@ -465,7 +583,136 @@ function ReportesSection() {
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-muted-foreground">Sin resultados</td>
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">Sin resultados</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DocsSection() {
+  const [entries, setEntries] = useState<Entry[]>([])
+  const [categoriaFiltro, setCategoriaFiltro] = useState('')
+
+  const cargar = async (cat: string) => {
+    try {
+      const data = await api.getEntries(cat ? { categoria: cat } : undefined)
+      setEntries(data)
+    } catch {
+      setEntries([])
+    }
+  }
+
+  useEffect(() => {
+    cargar('')
+  }, [])
+
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' })
+    doc.setFontSize(16)
+    doc.text('REGISTRO COMPLETO - FINCA TENNIS', 148, 15, { align: 'center' })
+    doc.setFontSize(8)
+    doc.text(`Generado: ${new Date().toLocaleString()}${categoriaFiltro ? ` | Categoría: ${categoriaFiltro}` : ''}`, 148, 21, { align: 'center' })
+    autoTable(doc, {
+      startY: 25,
+      head: [['Placa', 'Nombre', 'Categoría', 'Destino', 'Ingreso', 'Salida']],
+      body: entries.map((e) => [
+        e.placa,
+        e.nombre,
+        e.categoria,
+        e.destino,
+        e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '—',
+        e.salida ? new Date(e.salida).toLocaleString('es-ES') : '—',
+      ]),
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [75, 85, 99], halign: 'center' },
+    })
+    doc.save(`registro${categoriaFiltro ? `-${categoriaFiltro}` : ''}.pdf`)
+  }
+
+  const exportXLSX = () => {
+    const data = entries.map((e) => ({
+      Placa: e.placa,
+      Nombre: e.nombre,
+      Categoría: e.categoria,
+      Destino: e.destino,
+      Ingreso: e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '',
+      Salida: e.salida ? new Date(e.salida).toLocaleString('es-ES') : '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Registro')
+    XLSX.writeFile(wb, `registro${categoriaFiltro ? `-${categoriaFiltro}` : ''}.xlsx`)
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle>Documentos</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Categoría</label>
+            <select
+              value={categoriaFiltro}
+              onChange={(e) => {
+                setCategoriaFiltro(e.target.value)
+                cargar(e.target.value)
+              }}
+              className="flex h-9 w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+            >
+              <option value="">Todas</option>
+              <option value="Empleado">Empleados</option>
+              <option value="Visitante">Visitantes</option>
+              <option value="Residente">Residentes</option>
+            </select>
+          </div>
+          <Button onClick={exportPDF} size="sm" variant="outline" className="h-9" disabled={entries.length === 0}>
+            <FileText className="h-4 w-4 mr-1.5" />
+            PDF
+          </Button>
+          <Button onClick={exportXLSX} size="sm" variant="outline" className="h-9" disabled={entries.length === 0}>
+            <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+            XLSX
+          </Button>
+        </div>
+        <div className="rounded-md border max-h-[400px] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-background z-10">
+              <tr className="bg-muted/50 border-b">
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-5"></th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Placa</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nombre</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Categoría</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Destino</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Ingreso</th>
+                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Salida</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-2.5">{catIcon(e.categoria)}</td>
+                  <td className="px-4 py-2.5 font-mono">{e.placa}</td>
+                  <td className="px-4 py-2.5">{e.nombre}</td>
+                  <td className="px-4 py-2.5">
+                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">{e.categoria}</span>
+                  </td>
+                  <td className="px-4 py-2.5">{e.destino}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '—'}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
+                    {e.salida ? new Date(e.salida).toLocaleString('es-ES') : ''}
+                  </td>
+                </tr>
+              ))}
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">Sin resultados</td>
                 </tr>
               )}
             </tbody>

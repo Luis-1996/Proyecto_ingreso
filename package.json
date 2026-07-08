@@ -1,13 +1,51 @@
 {
   "name": "control-ingreso",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "backend": "cd backend && uvicorn main:app --reload --port 8000",
     "frontend": "cd frontend && npm run dev",
-    "dev": "concurrently -n BE,FE -c cyan,green \"npm run backend\" \"npm run frontend\""
+    "frontend:build": "cd frontend && npm run build",
+    "dev": "concurrently -n BE,FE -c cyan,green \"npm run backend\" \"npm run frontend\"",
+    "electron:dev": "concurrently -n BE,FE,EL -c cyan,green,yellow \"npm run backend\" \"npm run frontend\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "npm run frontend:build && electron-builder",
+    "electron:start": "electron ."
+  },
+  "build": {
+    "appId": "com.fincatennis.control-ingreso",
+    "productName": "Control de Ingreso",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "frontend/out",
+        "to": "frontend/out"
+      },
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": ["**/*", "!__pycache__", "!data/**"]
+      }
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.0.10"
   }
 }

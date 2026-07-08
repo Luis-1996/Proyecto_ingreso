@@ -1,27 +1,27 @@
 import os
-import json
-import asyncpg
-from dotenv import load_dotenv
+import aiosqlite
 
-load_dotenv()
+DB_PATH = os.getenv("SQLITE_PATH", os.path.join(os.path.dirname(__file__), "data", "control_ingreso.db"))
 
-DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/control_ingreso")
-
-pool = None
+db = None
 
 
 async def connect_db():
-    global pool
-    pool = await asyncpg.create_pool(DSN, min_size=1, max_size=5)
-    print("Conectado a PostgreSQL")
+    global db
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    db = await aiosqlite.connect(DB_PATH)
+    db.row_factory = aiosqlite.Row
+    await db.execute("PRAGMA journal_mode=WAL")
+    await db.execute("PRAGMA foreign_keys=ON")
+    print(f"Conectado a SQLite: {DB_PATH}")
 
 
 async def disconnect_db():
-    global pool
-    if pool:
-        await pool.close()
-        pool = None
+    global db
+    if db:
+        await db.close()
+        db = None
 
 
 def get_db():
-    return pool
+    return db

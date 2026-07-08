@@ -1,8 +1,11 @@
 node_modules/
 .next/
+out/
 __pycache__/
 *.pyc
 venv/
 .env
 .env.local
+*.db
+release/
 nul

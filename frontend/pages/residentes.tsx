@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { api, type Persona, type Entry } from '@/lib/api'
-import { ArrowLeftToLine, Loader2 } from 'lucide-react'
+import { ArrowLeftToLine, Loader2, UserCheck } from 'lucide-react'
 
 export default function ResidentesPage() {
   const [personas, setPersonas] = useState<Persona[]>([])
+  const [salidaMap, setSalidaMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [modalPersona, setModalPersona] = useState<Persona | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -18,9 +28,12 @@ export default function ResidentesPage() {
       ])
       const residentes = allPersonas.filter((p) => p.categoria === 'Residente')
       const fuera = new Set<string>()
+      const sm: Record<string, string> = {}
       for (const e of sinIngreso) {
         fuera.add(e.placa)
+        if (e.salida) sm[e.placa] = e.salida
       }
+      setSalidaMap(sm)
       setPersonas(residentes.filter((p) => fuera.has(p.placa)))
     } catch {}
     setLoading(false)
@@ -30,11 +43,13 @@ export default function ResidentesPage() {
     load()
   }, [])
 
-  const handleIngreso = async (persona: Persona) => {
-    setToggling(persona.id)
+  const confirmarIngreso = async () => {
+    if (!modalPersona) return
+    setToggling(modalPersona.id)
+    setModalPersona(null)
     try {
-      await api.registrarIngresoResidente(persona.placa)
-      setPersonas((prev) => prev.filter((p) => p.id !== persona.id))
+      await api.registrarIngresoResidente(modalPersona.placa)
+      setPersonas((prev) => prev.filter((p) => p.id !== modalPersona.id))
     } catch {}
     setToggling(null)
   }
@@ -60,6 +75,7 @@ export default function ResidentesPage() {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Placa</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nombre</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destino</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Salida</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acción</th>
                   </tr>
                 </thead>
@@ -71,8 +87,9 @@ export default function ResidentesPage() {
                         <td className="px-4 py-3 font-mono text-sm">{p.placa}</td>
                         <td className="px-4 py-3 text-sm">{p.nombre}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{p.destino}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{salidaMap[p.placa] ? new Date(salidaMap[p.placa]).toLocaleString('es-ES') : '—'}</td>
                         <td className="px-4 py-3">
-                          <Button onClick={() => handleIngreso(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          <Button onClick={() => setModalPersona(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                             {busy ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
@@ -92,6 +109,45 @@ export default function ResidentesPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={!!modalPersona} onOpenChange={(o) => !o && setModalPersona(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar ingreso de residente</DialogTitle>
+            <DialogDescription>
+              Confirme el ingreso del residente a la finca.
+            </DialogDescription>
+          </DialogHeader>
+          {modalPersona && (
+            <div className="space-y-3 py-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <UserCheck className="h-4 w-4" />
+                <span className="font-medium text-foreground">{modalPersona.placa}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Nombre: </span>
+                <span className="font-medium">{modalPersona.nombre}</span>
+              </div>
+              {modalPersona.destino && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Destino: </span>
+                  <span className="font-medium">{modalPersona.destino}</span>
+                </div>
+              )}
+              <div className="text-sm">
+                <span className="text-muted-foreground">Salida: </span>
+                <span className="font-medium">{salidaMap[modalPersona.placa] ? new Date(salidaMap[modalPersona.placa]).toLocaleString('es-ES') : '—'}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalPersona(null)}>Cancelar</Button>
+            <Button onClick={confirmarIngreso} className="bg-green-600 hover:bg-green-700 text-white">
+              <ArrowLeftToLine className="h-4 w-4 mr-1.5" />
+              Confirmar ingreso
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

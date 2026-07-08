@@ -57,6 +57,9 @@ export const api = {
   createPersona: (data: { placa: string; nombre: string; categoria: string; destino?: string }) =>
     request<Persona>('/api/personas', { method: 'POST', body: JSON.stringify(data) }),
 
+  updatePersona: (id: string, data: { placa: string; nombre: string; categoria: string; destino?: string }) =>
+    request<Persona>(`/api/personas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
   deletePersona: (id: string) =>
     request<{ ok: boolean }>(`/api/personas/${id}`, { method: 'DELETE' }),
 
@@ -73,13 +76,15 @@ export const api = {
   createEntry: (data: { placa: string; nombre: string; categoria: string; destino: string }) =>
     request<Entry>('/api/entries', { method: 'POST', body: JSON.stringify(data) }),
 
-  getEntries: (params?: { activo?: boolean; categoria?: string; desde?: string; hasta?: string; sin_ingreso?: boolean }) => {
+  getEntries: (params?: { activo?: boolean; categoria?: string; desde?: string; hasta?: string; sin_ingreso?: boolean; salida_desde?: string; salida_hasta?: string }) => {
     const query = new URLSearchParams()
     if (params?.activo !== undefined) query.set('activo', String(params.activo))
     if (params?.categoria) query.set('categoria', params.categoria)
     if (params?.desde) query.set('desde', params.desde)
     if (params?.hasta) query.set('hasta', params.hasta)
     if (params?.sin_ingreso !== undefined) query.set('sin_ingreso', String(params.sin_ingreso))
+    if (params?.salida_desde) query.set('salida_desde', params.salida_desde)
+    if (params?.salida_hasta) query.set('salida_hasta', params.salida_hasta)
     return request<Entry[]>(`/api/entries?${query}`)
   },
 
