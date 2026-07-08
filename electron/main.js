@@ -203,9 +203,9 @@ async function startApp() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 860,
+    height: 680,
     minWidth: 900,
-    minHeight: 600,
+    minHeight: 500,
     title: 'Control de Ingreso - Finca Tennis',
     icon: path.join(__dirname, '..', 'frontend', 'public', 'Tennis.png'),
     webPreferences: {
