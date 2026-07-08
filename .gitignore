@@ -13,3 +13,4 @@ release/
 backend/build/
 backend/backend.spec
 nul
+*.log

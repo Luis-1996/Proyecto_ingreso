@@ -11,7 +11,6 @@ app = FastAPI(title="Control de Ingreso", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -113,52 +112,64 @@ INSERT OR IGNORE INTO personas (placa, nombre, categoria, destino) VALUES
 
 @app.on_event("startup")
 async def startup():
-    await connect_db()
+    try:
+        await connect_db()
+    except Exception as e:
+        print(f"Error conectando a la base de datos: {e}")
+        raise
     db = get_db()
-    await db.executescript("""
-        CREATE TABLE IF NOT EXISTS personas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            placa TEXT NOT NULL UNIQUE,
-            nombre TEXT NOT NULL,
-            categoria TEXT NOT NULL,
-            destino TEXT DEFAULT '',
-            eliminado INTEGER DEFAULT 0
-        );
-        CREATE TABLE IF NOT EXISTS entries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            placa TEXT NOT NULL,
-            nombre TEXT NOT NULL,
-            categoria TEXT NOT NULL,
-            destino TEXT DEFAULT '',
-            ingreso TEXT,
-            salida TEXT,
-            responsable TEXT DEFAULT '',
-            activo INTEGER DEFAULT 1
-        );
-        CREATE TABLE IF NOT EXISTS config (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT NOT NULL UNIQUE,
-            value TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_personas_placa ON personas(placa);
-        CREATE INDEX IF NOT EXISTS idx_personas_nombre ON personas(nombre);
-        CREATE INDEX IF NOT EXISTS idx_entries_placa ON entries(placa);
-        CREATE INDEX IF NOT EXISTS idx_entries_activo ON entries(activo);
-        CREATE INDEX IF NOT EXISTS idx_entries_categoria ON entries(categoria);
-        CREATE INDEX IF NOT EXISTS idx_entries_ingreso ON entries(ingreso);
-    """)
+    try:
+        await db.executescript("""
+            CREATE TABLE IF NOT EXISTS personas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                placa TEXT NOT NULL UNIQUE,
+                nombre TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                destino TEXT DEFAULT '',
+                eliminado INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                placa TEXT NOT NULL,
+                nombre TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                destino TEXT DEFAULT '',
+                ingreso TEXT,
+                salida TEXT,
+                responsable TEXT DEFAULT '',
+                activo INTEGER DEFAULT 1
+            );
+            CREATE TABLE IF NOT EXISTS config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT NOT NULL UNIQUE,
+                value TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_personas_placa ON personas(placa);
+            CREATE INDEX IF NOT EXISTS idx_personas_nombre ON personas(nombre);
+            CREATE INDEX IF NOT EXISTS idx_entries_placa ON entries(placa);
+            CREATE INDEX IF NOT EXISTS idx_entries_activo ON entries(activo);
+            CREATE INDEX IF NOT EXISTS idx_entries_categoria ON entries(categoria);
+            CREATE INDEX IF NOT EXISTS idx_entries_ingreso ON entries(ingreso);
+        """)
+        await db.commit()
+    except Exception as e:
+        print(f"Error creando esquema de base de datos: {e}")
+        raise
     try:
         await db.execute("ALTER TABLE entries ADD COLUMN responsable TEXT DEFAULT ''")
     except Exception:
         pass
-    if not await cargar_schema(db):
-        cursor = await db.execute("SELECT id FROM config WHERE key = ?", ("categorias",))
-        if not await cursor.fetchone():
-            await db.executescript(SEED_SQL)
-            print("Datos semilla insertados (fallback)")
-        else:
-            print("La base de datos ya contiene datos")
-    await db.commit()
+    try:
+        if not await cargar_schema(db):
+            cursor = await db.execute("SELECT id FROM config WHERE key = ?", ("categorias",))
+            if not await cursor.fetchone():
+                await db.executescript(SEED_SQL)
+                print("Datos semilla insertados (fallback)")
+            else:
+                print("La base de datos ya contiene datos")
+        await db.commit()
+    except Exception as e:
+        print(f"Error cargando datos semilla: {e}")
     print("Base de datos inicializada")
 
 

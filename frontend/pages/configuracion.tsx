@@ -464,8 +464,10 @@ function ReportesSection() {
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
   const [fechaDesde, setFechaDesde] = useState(today)
   const [fechaHasta, setFechaHasta] = useState(today)
+  const [error, setError] = useState('')
 
   const cargar = async () => {
+    setError('')
     try {
       const data = await api.getEntries({
         ...(categoriaFiltro && { categoria: categoriaFiltro }),
@@ -473,8 +475,9 @@ function ReportesSection() {
         hasta: fechaHasta + 'T23:59:59',
       })
       setEntries(data)
-    } catch {
+    } catch (e: any) {
       setEntries([])
+      setError(e.message || 'Error al cargar los registros')
     }
   }
 
@@ -562,6 +565,7 @@ function ReportesSection() {
             </select>
           </div>
           <Button onClick={cargar} size="sm" className="h-9">Buscar</Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button onClick={generarPDF} size="sm" variant="outline" className="h-9 ml-auto" disabled={entries.length === 0}>
             <FileText className="h-4 w-4 mr-1.5" />
             PDF
