@@ -1,23 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
 import { api, type Persona, type Entry } from '@/lib/api'
-import { ArrowLeftToLine, Loader2, UserCheck } from 'lucide-react'
+import { ArrowLeftToLine, Loader2 } from 'lucide-react'
 
 export default function ResidentesPage() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [entryMap, setEntryMap] = useState<Record<string, Entry>>({})
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
-  const [modalPersona, setModalPersona] = useState<Persona | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -43,13 +34,11 @@ export default function ResidentesPage() {
     load()
   }, [])
 
-  const confirmarIngreso = async () => {
-    if (!modalPersona) return
-    setToggling(modalPersona.id)
-    setModalPersona(null)
+  const confirmarIngreso = async (persona: Persona) => {
+    setToggling(persona.id)
     try {
-      await api.registrarIngresoResidente(modalPersona.placa)
-      setPersonas((prev) => prev.filter((p) => p.id !== modalPersona.id))
+      await api.registrarIngresoResidente(persona.placa)
+      setPersonas((prev) => prev.filter((p) => p.id !== persona.id))
     } catch {}
     setToggling(null)
   }
@@ -91,7 +80,7 @@ export default function ResidentesPage() {
                         <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.salida ? new Date(entryMap[p.placa].salida!).toLocaleString('es-ES') : '—'}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.responsable || '—'}</td>
                         <td className="px-4 py-3">
-                          <Button onClick={() => setModalPersona(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          <Button onClick={() => confirmarIngreso(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                             {busy ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
@@ -111,49 +100,6 @@ export default function ResidentesPage() {
           )}
         </CardContent>
       </Card>
-      <Dialog open={!!modalPersona} onOpenChange={(o) => !o && setModalPersona(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar ingreso de residente</DialogTitle>
-            <DialogDescription>
-              Confirme el ingreso del residente a la finca.
-            </DialogDescription>
-          </DialogHeader>
-          {modalPersona && (
-            <div className="space-y-3 py-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <UserCheck className="h-4 w-4" />
-                <span className="font-medium text-foreground">{modalPersona.placa}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Nombre: </span>
-                <span className="font-medium">{modalPersona.nombre}</span>
-              </div>
-              {modalPersona.destino && (
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Destino: </span>
-                  <span className="font-medium">{modalPersona.destino}</span>
-                </div>
-              )}
-              <div className="text-sm">
-                <span className="text-muted-foreground">Salida: </span>
-                <span className="font-medium">{entryMap[modalPersona.placa]?.salida ? new Date(entryMap[modalPersona.placa].salida!).toLocaleString('es-ES') : '—'}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">Registró: </span>
-                <span className="font-medium">{entryMap[modalPersona.placa]?.responsable || '—'}</span>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalPersona(null)}>Cancelar</Button>
-            <Button onClick={confirmarIngreso} className="bg-green-600 hover:bg-green-700 text-white">
-              <ArrowLeftToLine className="h-4 w-4 mr-1.5" />
-              Confirmar ingreso
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
