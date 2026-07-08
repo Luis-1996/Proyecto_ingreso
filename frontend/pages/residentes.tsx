@@ -65,7 +65,6 @@ export default function ResidentesPage() {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nombre</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Destino</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Salida</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Registró</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acción</th>
                   </tr>
                 </thead>
@@ -78,7 +77,6 @@ export default function ResidentesPage() {
                         <td className="px-4 py-3 text-sm">{entryMap[p.placa]?.nombre || p.nombre}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{p.destino}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.salida ? new Date(entryMap[p.placa].salida!).toLocaleString('es-ES') : '—'}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{entryMap[p.placa]?.responsable || '—'}</td>
                         <td className="px-4 py-3">
                           <Button onClick={() => confirmarIngreso(p)} disabled={busy} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                             {busy ? (
