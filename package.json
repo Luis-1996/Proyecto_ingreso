@@ -4,7 +4,7 @@
   "private": true,
   "main": "electron/main.js",
   "scripts": {
-    "backend": "cd backend && uvicorn main:app --reload --port 8000",
+    "backend": "cd backend && python -m uvicorn main:app --reload --port 8002",
     "frontend": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && npm run build",
     "dev": "concurrently -n BE,FE -c cyan,green \"npm run backend\" \"npm run frontend\"",
@@ -27,9 +27,9 @@
         "to": "frontend/out"
       },
       {
-        "from": "backend",
+        "from": "backend/dist",
         "to": "backend",
-        "filter": ["**/*", "!__pycache__", "!data/**"]
+        "filter": ["*.exe"]
       },
       {
         "from": "database",

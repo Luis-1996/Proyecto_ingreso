@@ -1,7 +1,15 @@
 import os
+import sys
 import aiosqlite
 
-DB_PATH = os.getenv("SQLITE_PATH", os.path.join(os.path.dirname(__file__), "data", "control_ingreso.db"))
+
+def _get_default_db_path():
+    if getattr(sys, "frozen", False):
+        return os.path.join(os.path.dirname(sys.executable), "data", "control_ingreso.db")
+    return os.path.join(os.path.dirname(__file__), "data", "control_ingreso.db")
+
+
+DB_PATH = os.getenv("SQLITE_PATH", _get_default_db_path())
 
 db = None
 

@@ -516,3 +516,9 @@ async def update_config(key: str, config: ConfigUpdate):
     )
     await db.commit()
     return {"key": key, "value": config.value}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("BACKEND_PORT", "8002"))
+    uvicorn.run(app, host="127.0.0.1", port=port, reload=False, workers=1)

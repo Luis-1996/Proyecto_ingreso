@@ -114,18 +114,34 @@ function startFrontendServer() {
 function startBackend() {
   return new Promise((resolve, reject) => {
     const backendDir = getBackendDir()
-    const pythonCmd = getPythonCmd()
+    const userDataDir = app.getPath('userData')
 
-    if (!fs.existsSync(path.join(backendDir, 'main.py'))) {
-      reject(new Error(`Backend not found at ${backendDir}`))
-      return
+    if (isDev) {
+      // Development: use python -m uvicorn
+      const pythonCmd = getPythonCmd()
+      if (!fs.existsSync(path.join(backendDir, 'main.py'))) {
+        reject(new Error(`Backend not found at ${backendDir}`))
+        return
+      }
+      backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', String(BACKEND_PORT)], {
+        cwd: backendDir,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, SQLITE_PATH: path.join(userDataDir, 'data', 'control_ingreso.db'), BACKEND_PORT: String(BACKEND_PORT) },
+      })
+    } else {
+      // Production: use compiled backend.exe
+      const exePath = path.join(backendDir, 'backend.exe')
+      if (!fs.existsSync(exePath)) {
+        reject(new Error(`Backend executable not found at ${exePath}`))
+        return
+      }
+      console.log('Starting backend from:', exePath)
+      backendProcess = spawn(exePath, [], {
+        cwd: userDataDir,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, SQLITE_PATH: path.join(userDataDir, 'data', 'control_ingreso.db'), BACKEND_PORT: String(BACKEND_PORT) },
+      })
     }
-
-    backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', String(BACKEND_PORT)], {
-      cwd: backendDir,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
-    })
 
     backendProcess.stdout.on('data', (data) => {
       const msg = data.toString()

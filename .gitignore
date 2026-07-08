@@ -10,4 +10,6 @@ venv/
 *.db-shm
 *.db-wal
 release/
+backend/build/
+backend/backend.spec
 nul
