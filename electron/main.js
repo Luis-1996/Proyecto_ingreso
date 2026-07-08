@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog } = require('electron')
+const { app, BrowserWindow, dialog, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const http = require('http')
@@ -218,6 +218,10 @@ function createWindow() {
   const url = isDev
     ? `http://localhost:${FRONTEND_PORT}`
     : `http://127.0.0.1:${FRONTEND_PORT}`
+
+  session.defaultSession.clearCache().then(() => {
+    console.log('Session cache cleared')
+  }).catch(() => {})
 
   mainWindow.loadURL(url)
 
