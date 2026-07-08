@@ -358,22 +358,20 @@ async def get_entries(activo: bool = None, categoria: str = None, desde: str = N
         params.append(categoria)
     if desde:
         conditions.append("(ingreso >= ? OR salida >= ?)")
-        d = datetime.fromisoformat(desde).isoformat()
-        params.append(d)
-        params.append(d)
+        params.append(desde)
+        params.append(desde)
     if hasta:
         conditions.append("(ingreso <= ? OR salida <= ?)")
         hs = hasta if "T" in hasta else hasta + "T23:59:59"
-        h = datetime.fromisoformat(hs).isoformat()
-        params.append(h)
-        params.append(h)
+        params.append(hs)
+        params.append(hs)
     if salida_desde:
         conditions.append("salida >= ?")
-        params.append(datetime.fromisoformat(salida_desde).isoformat())
+        params.append(salida_desde)
     if salida_hasta:
         conditions.append("salida < ?")
         hs = salida_hasta if "T" in salida_hasta else salida_hasta + "T23:59:59"
-        params.append(datetime.fromisoformat(hs).isoformat())
+        params.append(hs)
     if sin_ingreso:
         conditions.append("ingreso IS NULL")
         sql_order = " ORDER BY salida DESC"
