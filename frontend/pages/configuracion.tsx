@@ -595,58 +595,49 @@ function ReportesSection() {
 }
 
 function DocsSection() {
-  const [entries, setEntries] = useState<Entry[]>([])
+  const [personas, setPersonas] = useState<Persona[]>([])
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
 
-  const cargar = async (cat: string) => {
-    try {
-      const data = await api.getEntries(cat ? { categoria: cat } : undefined)
-      setEntries(data)
-    } catch {
-      setEntries([])
-    }
-  }
-
   useEffect(() => {
-    cargar('')
+    api.listPersonas().then(setPersonas).catch(() => setPersonas([]))
   }, [])
+
+  const filtered = categoriaFiltro
+    ? personas.filter((p) => p.categoria === categoriaFiltro)
+    : personas
 
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape' })
     doc.setFontSize(16)
-    doc.text('REGISTRO COMPLETO - FINCA TENNIS', 148, 15, { align: 'center' })
+    doc.text('PERSONAL REGISTRADO - FINCA TENNIS', 148, 15, { align: 'center' })
     doc.setFontSize(8)
     doc.text(`Generado: ${new Date().toLocaleString()}${categoriaFiltro ? ` | Categoría: ${categoriaFiltro}` : ''}`, 148, 21, { align: 'center' })
     autoTable(doc, {
       startY: 25,
-      head: [['Placa', 'Nombre', 'Categoría', 'Destino', 'Ingreso', 'Salida']],
-      body: entries.map((e) => [
-        e.placa,
-        e.nombre,
-        e.categoria,
-        e.destino,
-        e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '—',
-        e.salida ? new Date(e.salida).toLocaleString('es-ES') : '—',
+      head: [['Placa', 'Nombre', 'Categoría', 'Destino']],
+      body: filtered.map((p) => [
+        p.placa,
+        p.nombre,
+        p.categoria,
+        p.destino || '—',
       ]),
       styles: { fontSize: 7 },
       headStyles: { fillColor: [75, 85, 99], halign: 'center' },
     })
-    doc.save(`registro${categoriaFiltro ? `-${categoriaFiltro}` : ''}.pdf`)
+    doc.save(`personal${categoriaFiltro ? `-${categoriaFiltro}` : ''}.pdf`)
   }
 
   const exportXLSX = () => {
-    const data = entries.map((e) => ({
-      Placa: e.placa,
-      Nombre: e.nombre,
-      Categoría: e.categoria,
-      Destino: e.destino,
-      Ingreso: e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '',
-      Salida: e.salida ? new Date(e.salida).toLocaleString('es-ES') : '',
+    const data = filtered.map((p) => ({
+      Placa: p.placa,
+      Nombre: p.nombre,
+      Categoría: p.categoria,
+      Destino: p.destino || '',
     }))
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Registro')
-    XLSX.writeFile(wb, `registro${categoriaFiltro ? `-${categoriaFiltro}` : ''}.xlsx`)
+    XLSX.utils.book_append_sheet(wb, ws, 'Personal')
+    XLSX.writeFile(wb, `personal${categoriaFiltro ? `-${categoriaFiltro}` : ''}.xlsx`)
   }
 
   return (
@@ -660,23 +651,21 @@ function DocsSection() {
             <label className="text-xs text-muted-foreground">Categoría</label>
             <select
               value={categoriaFiltro}
-              onChange={(e) => {
-                setCategoriaFiltro(e.target.value)
-                cargar(e.target.value)
-              }}
+              onChange={(e) => setCategoriaFiltro(e.target.value)}
               className="flex h-9 w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
               <option value="">Todas</option>
               <option value="Empleado">Empleados</option>
               <option value="Visitante">Visitantes</option>
               <option value="Residente">Residentes</option>
+              <option value="Seguridad">Seguridad</option>
             </select>
           </div>
-          <Button onClick={exportPDF} size="sm" variant="outline" className="h-9" disabled={entries.length === 0}>
+          <Button onClick={exportPDF} size="sm" variant="outline" className="h-9" disabled={filtered.length === 0}>
             <FileText className="h-4 w-4 mr-1.5" />
             PDF
           </Button>
-          <Button onClick={exportXLSX} size="sm" variant="outline" className="h-9" disabled={entries.length === 0}>
+          <Button onClick={exportXLSX} size="sm" variant="outline" className="h-9" disabled={filtered.length === 0}>
             <FileSpreadsheet className="h-4 w-4 mr-1.5" />
             XLSX
           </Button>
@@ -690,29 +679,23 @@ function DocsSection() {
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Nombre</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Categoría</th>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Destino</th>
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Ingreso</th>
-                <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Salida</th>
               </tr>
             </thead>
             <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-2.5">{catIcon(e.categoria)}</td>
-                  <td className="px-4 py-2.5 font-mono">{e.placa}</td>
-                  <td className="px-4 py-2.5">{e.nombre}</td>
+              {filtered.map((p) => (
+                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-2.5">{catIcon(p.categoria)}</td>
+                  <td className="px-4 py-2.5 font-mono">{p.placa}</td>
+                  <td className="px-4 py-2.5">{p.nombre}</td>
                   <td className="px-4 py-2.5">
-                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">{e.categoria}</span>
+                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">{p.categoria}</span>
                   </td>
-                  <td className="px-4 py-2.5">{e.destino}</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">{e.ingreso ? new Date(e.ingreso).toLocaleString('es-ES') : '—'}</td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    {e.salida ? new Date(e.salida).toLocaleString('es-ES') : ''}
-                  </td>
+                  <td className="px-4 py-2.5">{p.destino || '—'}</td>
                 </tr>
               ))}
-              {entries.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">Sin resultados</td>
+                  <td colSpan={5} className="text-center py-8 text-muted-foreground">Sin personas registradas</td>
                 </tr>
               )}
             </tbody>
