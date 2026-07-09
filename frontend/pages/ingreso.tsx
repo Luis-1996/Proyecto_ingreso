@@ -246,12 +246,12 @@ export default function IngresoPage() {
 
           {action && (
             <div className={`flex items-center gap-3 p-4 rounded-md border ${
-              action.accion === 'ingreso' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'
+              action.accion === 'ingreso' ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-orange-500 bg-orange-50 dark:bg-orange-950/30'
             }`}>
               {action.accion === 'ingreso' ? (
-                <ArrowLeftToLine className="h-5 w-5 text-green-600" />
+                <ArrowLeftToLine className="h-5 w-5 text-green-600 dark:text-green-400" />
               ) : (
-                <ArrowRightFromLine className="h-5 w-5 text-orange-600" />
+                <ArrowRightFromLine className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               )}
               <div>
                 <p className="text-sm font-medium">
